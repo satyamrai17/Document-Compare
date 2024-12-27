@@ -1,0 +1,7 @@
+This is a sample document used for comparison.
+
+It contains multiple lines of text.  
+Each line serves a purpose in demonstrating the functionality of the document comparison tool.
+
+Feel free to edit this document to customize it for your needs.  
+Good luck with your testing!

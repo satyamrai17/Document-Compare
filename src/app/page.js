@@ -1,101 +1,107 @@
-import Image from "next/image";
+
+'use client';
+
+import { useState } from 'react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [file, setFile] = useState(null);
+  const [differences, setDifferences] = useState([]);
+  const [resultId, setResultId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!file) {
+      alert('Please select a file.');
+      return;
+    }
+
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append('uploadedFile', file);
+
+    const response = await fetch('http://localhost:3000/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    setLoading(false);
+
+    if (response.ok) {
+      setDifferences(data.differences);
+      setResultId(data.resultId);
+    } else {
+      alert(data.error || 'An error occurred');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-blue-100 via-white to-blue-50 flex flex-col items-center p-6">
+      <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
+        Document Comparison Tool
+      </h1>
+
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md bg-white p-8 shadow-lg rounded-lg"
+      >
+        <label className="block text-lg font-medium text-gray-700 mb-2">
+          Upload Only Doc File
+        </label>
+        <input
+          type="file"
+          accept=".doc,.docx"
+          onChange={handleFileChange}
+          className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-6"
+          required
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full py-2 px-4 text-white font-bold rounded-lg transition-all ${
+            loading
+              ? 'bg-blue-300 cursor-not-allowed'
+              : 'bg-blue-500 hover:bg-blue-600 focus:ring focus:ring-blue-300'
+          }`}
+        >
+          {loading ? 'Comparing...' : 'Compare'}
+        </button>
+      </form>
+
+      {differences.length > 0 && (
+        <div className="mt-8 w-full max-w-3xl bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">
+            Comparison Results
+          </h2>
+          <div className="border-t border-gray-300 pt-4">
+            <h3 className="text-green-600 font-semibold mb-2">Matching Data</h3>
+            <h3 className="text-red-600 font-semibold mb-2">Your File Data</h3>
+            <h3 className="text-gray-600 font-semibold mb-4">Standard Data</h3>
+            <ul className="space-y-2">
+              {differences.map((diff, index) => (
+                <li
+                  key={index}
+                  className={`py-2 px-4 rounded-lg ${
+                    diff[0] === 1
+                      ? 'bg-red-100 text-red-700'
+                      : diff[0] === -1
+                      ? 'bg-gray-100 text-gray-700'
+                      : 'bg-green-100 text-green-700'
+                  }`}
+                >
+                  {diff[1]}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
     </div>
   );
 }
